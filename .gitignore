@@ -63,6 +63,9 @@ htmlcov/
 # Flask session files
 flask_session/
 
+# Flask migrations
+migrations/versions/*
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 

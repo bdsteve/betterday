@@ -9,3 +9,12 @@ typing_extensions==4.12.2
 Werkzeug==3.0.4
 pytest
 pytest-flask
+Flask-Migrate
+python-dotenv
+flask-jwt-extended
+flask-login
+flask-restful
+psycopg2-binary
+Flask-WTF
+python-dateutil
+
