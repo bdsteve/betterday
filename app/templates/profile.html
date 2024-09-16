@@ -1,0 +1,23 @@
+<!-- app/templates/profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}Your Profile - BetterDay{% endblock %}
+
+{% set show_back_button = True %}
+{% set back_url = url_for('main.home') %}
+
+{% block content %}
+<header class="mb-6 mt-4">
+    <h1 class="text-3xl font-bold text-gray-800">Your Profile</h1>
+</header>
+<main>
+    <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+        <p class="text-gray-700"><strong>First Name:</strong> {{ user.first_name }}</p>
+        <p class="text-gray-700"><strong>Last Name:</strong> {{ user.last_name }}</p>
+        <p class="text-gray-700"><strong>Email:</strong> {{ user.email }}</p>
+        <p class="text-gray-700"><strong>Mobile:</strong> {{ user.mobile }}</p>
+        <p class="text-gray-700"><strong>Timezone:</strong> {{ user.timezone }}</p>
+        <!-- Add more profile details as needed -->
+    </div>
+</main>
+{% endblock %}

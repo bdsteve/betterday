@@ -1,0 +1,71 @@
+<!-- app/templates/schedules.html -->
+{% extends 'base.html' %}
+
+{% block title %}Your Schedules - BetterDay{% endblock %}
+
+{% set show_back_button = True %}
+{% set back_url = url_for('main.home') %}
+
+{% block content %}
+<header class="mb-6 mt-4">
+    <h1 class="text-3xl font-bold text-gray-800">Your Schedules</h1>
+</header>
+<main>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Schedules - BetterDay</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Your Schedules</h1>
+        </header>
+        <main>
+            {% if schedules %}
+                {% for schedule in schedules %}
+                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-700 mb-2">{{ schedule.name }}</h2>
+                        <p class="text-gray-600">Start Date: {{ schedule.start_date.strftime('%Y-%m-%d') }}</p>
+                        <p class="text-gray-600 mb-4">End Date: {{ schedule.end_date.strftime('%Y-%m-%d') if schedule.end_date else 'Ongoing' }}</p>
+                        
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Scheduled Activities:</h3>
+                        {% if schedule.schedule_activities %}
+                            <ul class="space-y-2">
+                                {% for schedule_activity in schedule.schedule_activities %}
+                                    <li class="bg-gray-50 p-3 rounded">
+                                        <p class="font-semibold">{{ schedule_activity.activity.title }}</p>
+                                        <p class="text-sm text-gray-600">Start Time: {{ schedule_activity.start_time.strftime('%I:%M %p') }}</p>
+                                        <p class="text-sm text-gray-600">Duration: {{ schedule_activity.duration }} minutes</p>
+                                        <p class="text-sm text-gray-600">Recurrence: {{ schedule_activity.recurrence }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-gray-600">No activities scheduled yet.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <p class="text-gray-600">You don't have any schedules yet.</p>
+                </div>
+            {% endif %}
+            <div class="mt-6">
+                <a href="#" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Create New Schedule</a>
+            </div>
+        </main>
+        <footer class="mt-8 text-center">
+            <a href="{{ url_for('main.home') }}" class="text-blue-500 hover:text-blue-700">Back to Home</a>
+        </footer>
+    </div>
+</body>
+</html>
+</main>
+<footer class="mt-8 text-center">
+    <a href="{{ url_for('main.home') }}" class="text-blue-500 hover:text-blue-700">Back to Home</a>
+</footer>
+{% endblock %}

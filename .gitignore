@@ -1,0 +1,106 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*.swn
+*.bak
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Configuration files
+.env
+*.ini
+*.conf
+
+# Database files
+*.db
+*.sqlite
+
+# Log files
+logs/
+*.log
+
+# Static and media files
+static/
+media/
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
+# Pytest
+.pytest_cache/
+
+# Flask session files
+flask_session/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Miscellaneous
+*.bak
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.rej
+*.patch
+*.diff
+*.err
+*.out
+*.pid
+*.seed
+*.synctex.gz
+*.synctex(busy)
+*.pdfsync
+*.fls
+*.vrb
+*.fdb_latexmk
+*.nav
+*.snm
+*.toc
+*.aux
+*.lof
+*.lot
+*.maf
+*.mtc
+*.mtc0
+*.mtc1
+*.out.ps
+
+# Project-specific ignores
+# Add any project-specific files or directories you want to ignore
+
+combined.txt

@@ -1,0 +1,56 @@
+<!-- app/templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BetterDay{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    {% endblock %}
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Header Bar -->
+    <header class="bg-blue-50 py-2 shadow-md fixed top-0 left-0 right-0 z-10">
+        <div class="container mx-auto px-4 flex items-center justify-between max-w-md">
+            <!-- Back Arrow (conditionally displayed) -->
+            {% if show_back_button %}
+            <a href="{{ back_url or url_for('main.home') }}" class="text-blue-500 text-2xl">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            {% else %}
+            <div class="w-6"></div> <!-- Empty space to keep the title centered -->
+            {% endif %}
+
+            <!-- App Name -->
+            <h1 class="text-center flex-grow text-gray-800 text-sm font-semibold">
+                BetterDay
+            </h1>
+
+            <!-- User Profile Icon -->
+            <a href="{{ url_for('main.user_profile') }}" class="text-blue-500 text-2xl">
+                <i class="fas fa-user-circle"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-md mt-16">
+        {% block content %}
+        <!-- Content from child templates will be inserted here -->
+        {% endblock %}
+    </div>
+
+    <!-- Footer -->
+    {% block footer %}
+    <!-- Footer content goes here -->
+    {% endblock %}
+
+    <!-- Optional Scripts -->
+    {% block scripts %}
+    <!-- Scripts go here -->
+    {% endblock %}
+</body>
+</html>
