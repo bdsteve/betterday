@@ -3,15 +3,11 @@ from gitignore_parser import parse_gitignore
 
 # Define the files to be concatenated
 files_to_concatenate = [
-    'app/__init__.py',
-    'app/routes.py',
-    'app/models.py',
-    'app/forms.py',
-#    'app/utils.py',
     'app/templates/home.html',
     'app/templates/doactivity.html',
     'app/templates/schedules.html',
-    'app/templates/profile.html',
+    'app/templates/landing.html',
+    'app/templates/macros.html',
     'app/templates/base.html',
     'run.py'
 ]

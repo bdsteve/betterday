@@ -12,11 +12,9 @@ def create_activity_instances(schedule_activity, end_date=None):
     if end_date is None:
         end_date = datetime.now(user_tz) + timedelta(days=365)
 
-    # Calculate the start of today in user's time zone
     today_local = datetime.now(user_tz).date()
     start_of_today_local = datetime.combine(today_local, time.min, tzinfo=user_tz)
 
-    # Delete existing instances from start_of_today_local onwards, converted to UTC
     start_of_today_utc = start_of_today_local.astimezone(timezone.utc)
     deleted_rows = ActivityInstance.query.filter(
         ActivityInstance.schedule_activity_id == schedule_activity.id,
@@ -24,20 +22,18 @@ def create_activity_instances(schedule_activity, end_date=None):
     ).delete(synchronize_session=False)
     db.session.commit()
 
-    # Generate new instances starting from start_of_today_local
     dtstart_local = schedule_activity.dtstart.astimezone(user_tz)
     rrule = rrulestr(schedule_activity.recurrence, dtstart=dtstart_local)
     dates = rrule.between(start_of_today_local, end_date, inc=True)
 
     for date in dates:
-        # Combine date from recurrence rule with start_time in user's local time
         instance_datetime_local = datetime.combine(date.date(), schedule_activity.start_time, tzinfo=user_tz)
-        # Convert to UTC for storage
         instance_datetime_utc = instance_datetime_local.astimezone(timezone.utc)
 
         activity_instance = ActivityInstance(
             schedule_activity_id=schedule_activity.id,
-            instance_date=instance_datetime_utc
+            instance_date=instance_datetime_utc,
+            generate_notifications=schedule_activity.generate_notifications
         )
         db.session.add(activity_instance)
     db.session.commit()
@@ -100,7 +96,6 @@ def get_user_schedule(user_id, start_date, end_date, user_tz):
             schedule[instance_date_local] = []
         schedule[instance_date_local].append(instance)
 
-    print(f"Schedule fetched for user {user_id} from {start_datetime_utc} to {end_datetime_utc}: {schedule}")
     return schedule
 
 def convert_to_local_time(utc_time, local_tz):

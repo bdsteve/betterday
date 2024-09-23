@@ -1,9 +1,9 @@
 # app/forms.py
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, IntegerField, TimeField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
-from app.models import User
+from app.models import User, Activity
 from zoneinfo import ZoneInfo, available_timezones
 
 def get_timezone_choices():
@@ -34,3 +34,19 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
+
+class ScheduleActivityForm(FlaskForm):
+    activity_id = SelectField('Activity', coerce=int)
+    start_time = TimeField('Start Time', validators=[DataRequired()])
+    duration = IntegerField('Duration (minutes)', validators=[DataRequired()])
+    recurrence = SelectField('Recurrence', choices=[
+        ('RRULE:FREQ=DAILY', 'Every day'),
+        ('RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', 'Every weekday'),
+        ('RRULE:FREQ=WEEKLY;BYDAY=SA,SU', 'Every weekend'),
+        # Add more choices as needed
+    ], validators=[DataRequired()])
+    generate_notifications = BooleanField('Generate Notifications', default=True)
+
+    def __init__(self, *args, **kwargs):
+        super(ScheduleActivityForm, self).__init__(*args, **kwargs)
+        self.activity_id.choices = [(activity.id, activity.title) for activity in Activity.query.all()]

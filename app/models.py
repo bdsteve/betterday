@@ -1,6 +1,6 @@
 # app/models.py
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, Date, Time
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, Date, Time, text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.ext.associationproxy import association_proxy
 from typing import List, Optional
@@ -25,6 +25,7 @@ class User(Base, UserMixin):
     password_hash: Mapped[str] = mapped_column(String(512))
     subscription: Mapped[Optional[str]] = mapped_column(String(50))
     timezone: Mapped[str] = mapped_column(String(50), default='UTC')
+    default_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default=text('true'))
     
     user_types: Mapped[List["UserType"]] = relationship(back_populates="user")
     types: Mapped[List["Type"]] = association_proxy("user_types", "type")
@@ -103,6 +104,7 @@ class ActivityDeck(Base):
     __tablename__ = "activity_decks"
     
     id: Mapped[int] = mapped_column(primary_key=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
     activity_id: Mapped[int] = mapped_column(ForeignKey("activities.id"))
     level: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
@@ -131,10 +133,21 @@ class ScheduleActivity(db.Model):
     dtstart: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)  # Store as UTC
     duration: Mapped[int] = mapped_column(Integer, nullable=False)
     recurrence: Mapped[str] = mapped_column(String, nullable=False)
+    generate_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     schedule: Mapped["Schedule"] = relationship(back_populates="schedule_activities")
     activity: Mapped["Activity"] = relationship()
     instances: Mapped[List["ActivityInstance"]] = relationship(back_populates="schedule_activity", cascade="all, delete-orphan")
+
+    @classmethod
+    def get_default_notifications(cls, user_id):
+        user = User.query.get(user_id)
+        return user.default_notifications if user else True
+    
+    def __init__(self, **kwargs):
+        super(ScheduleActivity, self).__init__(**kwargs)
+        if 'generate_notifications' not in kwargs:
+            self.generate_notifications = self.get_default_notifications(self.schedule.user_id)
 
 class ActivityInstance(db.Model):
     __tablename__ = "activity_instances"
@@ -149,6 +162,7 @@ class ActivityInstance(db.Model):
     completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     mood: Mapped[Optional[str]] = mapped_column(String(50))
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    generate_notifications: Mapped[bool] = mapped_column(Boolean, nullable=False)
     
     schedule_activity: Mapped["ScheduleActivity"] = relationship(back_populates="instances")
 

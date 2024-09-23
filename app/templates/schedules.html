@@ -11,61 +11,358 @@
     <h1 class="text-3xl font-bold text-gray-800">Your Schedules</h1>
 </header>
 <main>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Schedules - BetterDay</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 font-sans">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Your Schedules</h1>
-        </header>
-        <main>
-            {% if schedules %}
-                {% for schedule in schedules %}
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-700 mb-2">{{ schedule.name }}</h2>
-                        <p class="text-gray-600">Start Date: {{ schedule.start_date.strftime('%Y-%m-%d') }}</p>
-                        <p class="text-gray-600 mb-4">End Date: {{ schedule.end_date.strftime('%Y-%m-%d') if schedule.end_date else 'Ongoing' }}</p>
-                        
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Scheduled Activities:</h3>
-                        {% if schedule.schedule_activities %}
-                            <ul class="space-y-2">
-                                {% for schedule_activity in schedule.schedule_activities %}
-                                    <li class="bg-gray-50 p-3 rounded">
-                                        <p class="font-semibold">{{ schedule_activity.activity.title }}</p>
-                                        <p class="text-sm text-gray-600">Start Time: {{ schedule_activity.start_time.strftime('%I:%M %p') }}</p>
-                                        <p class="text-sm text-gray-600">Duration: {{ schedule_activity.duration }} minutes</p>
-                                        <p class="text-sm text-gray-600">Recurrence: {{ schedule_activity.recurrence }}</p>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-gray-600">No activities scheduled yet.</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <p class="text-gray-600">You don't have any schedules yet.</p>
-                </div>
-            {% endif %}
-            <div class="mt-6">
-                <a href="#" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Create New Schedule</a>
+    {% if schedules %}
+        {% for schedule in schedules %}
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-2">{{ schedule.name }}</h2>
+                <p class="text-gray-600">Start Date: {{ schedule.start_date.strftime('%Y-%m-%d') }}</p>
+                <p class="text-gray-600 mb-4">End Date: {{ schedule.end_date.strftime('%Y-%m-%d') if schedule.end_date else 'Ongoing' }}</p>
+                
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Scheduled Activities:</h3>
+                {% if schedule.schedule_activities %}
+                    <!-- Sort activities by start time -->
+                    {% set sorted_activities = schedule.schedule_activities|sort(attribute='start_time') %}
+                    <ul class="space-y-2">
+                        {% for schedule_activity in sorted_activities %}
+                            <li class="bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                <p class="font-semibold">{{ schedule_activity.activity.title }}</p>
+                                <p class="text-sm text-gray-600">Start Time: {{ schedule_activity.start_time.strftime('%I:%M %p') }}</p>
+                                <p class="text-sm text-gray-600">Duration: {{ schedule_activity.duration }} minutes</p>
+                                <p class="text-sm text-gray-600">Recurrence: {{ schedule_activity.recurrence }}</p>
+                                
+                                <!-- Add the toggle switch -->
+                                <label class="flex items-center cursor-pointer mt-2">
+                                    <div class="relative">
+                                        <input type="checkbox" class="sr-only notification-toggle" data-id="{{ schedule_activity.id }}"
+                                               {% if schedule_activity.generate_notifications %}checked{% endif %}>
+                                        <div class="w-10 h-4 bg-gray-400 rounded-full shadow-inner"></div>
+                                        <div class="dot absolute w-6 h-6 bg-white rounded-full shadow -left-1 -top-1 transition"></div>
+                                    </div>
+                                    <div class="ml-3 text-gray-700 font-medium">
+                                        Generate Notifications
+                                    </div>
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-600">No activities scheduled yet.</p>
+                {% endif %}
+                <button class="mt-4 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600" onclick="showAddActivityForm({{ schedule.id }})">
+                    <i class="fas fa-plus"></i> Add Activity
+                </button>
             </div>
-        </main>
-        <footer class="mt-8 text-center">
-            <a href="{{ url_for('main.home') }}" class="text-blue-500 hover:text-blue-700">Back to Home</a>
-        </footer>
+        {% endfor %}
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <p class="text-gray-600">You don't have any schedules yet.</p>
+        </div>
+    {% endif %}
+    <div class="mt-6 flex justify-between items-center">
+        <a href="#" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Create New Schedule</a>
+        <a href="{{ url_for('main.generate_instances') }}" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Refresh Schedules</a>
     </div>
-</body>
-</html>
 </main>
-<footer class="mt-8 text-center">
-    <a href="{{ url_for('main.home') }}" class="text-blue-500 hover:text-blue-700">Back to Home</a>
-</footer>
+
+<!-- Add/Edit Activity Modal -->
+<div id="activityModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 id="modalTitle" class="text-lg font-medium text-gray-900 mb-4"></h3>
+        <form id="activityForm">
+            <!-- Include CSRF token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="scheduleId" name="scheduleId">
+            <input type="hidden" id="activityId" name="activityId">
+        
+            <!-- Activity Selection Dropdown -->
+            <div class="mb-4" id="activitySelectionDiv">
+                <label for="selectActivity">Select Activity</label>
+                <select id="selectActivity" name="activity_id" required>
+                    <!-- Options will be populated via JavaScript -->
+                </select>
+            </div>
+        
+            <!-- Activity Title Display (for edit mode) -->
+            <div class="mb-4 hidden" id="activityTitleDiv">
+                <label>Activity</label>
+                <p id="activityTitle"></p>
+            </div>
+        
+            <!-- Start Time -->
+            <div class="mb-4">
+                <label for="startTime">Start Time</label>
+                <input type="time" id="startTime" name="start_time" required>
+            </div>
+        
+            <!-- Duration -->
+            <div class="mb-4">
+                <label for="duration">Duration (minutes)</label>
+                <input type="number" id="duration" name="duration" required>
+            </div>
+        
+            <!-- Recurrence -->
+            <div class="mb-4">
+                <label for="recurrence">Recurrence</label>
+                <select id="recurrence" name="recurrence" required>
+                    <option value="RRULE:FREQ=DAILY">Every day</option>
+                    <!-- Add more options as needed -->
+                </select>
+            </div>
+        
+            <!-- Generate Notifications Toggle -->
+            <div class="mb-4">
+                <label for="generateNotifications" class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" id="generateNotifications" name="generate_notifications" class="sr-only">
+                        <div class="w-10 h-4 bg-gray-400 rounded-full shadow-inner"></div>
+                        <div class="dot absolute w-6 h-6 bg-white rounded-full shadow -left-1 -top-1 transition"></div>
+                    </div>
+                    <div class="ml-3">
+                        Generate Notifications
+                    </div>
+                </label>
+            </div>
+        
+            <!-- Submit, Cancel, and Delete Buttons -->
+            <div class="flex justify-between items-center">
+                <!-- Delete Button (only in edit mode) -->
+                <button type="button" id="deleteButton" class="text-red-500" onclick="deleteActivityFromModal()" style="display: none;">Delete Activity</button>
+                <div>
+                    <button type="button" onclick="closeModal()">Cancel</button>
+                    <button type="submit">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fetch all activities and populate the dropdown
+        fetch('/api/activities', {
+            method: 'GET',
+            credentials: 'same-origin', // Ensures cookies are sent with the request
+            headers: {
+                'X-CSRFToken': getCsrfToken()  // Include CSRF token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const selectActivity = document.getElementById('selectActivity');
+            selectActivity.innerHTML = ''; // Clear previous options
+
+            data.forEach(activity => {
+                const option = document.createElement('option');
+                option.value = activity.id;
+                option.textContent = activity.title;
+                selectActivity.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error fetching activities:', error));
+    });
+
+    document.querySelectorAll('.notification-toggle').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const activityId = this.dataset.id;
+        const generateNotifications = this.checked;
+
+        fetch(`/update_activity_notifications/${activityId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()  // Correct header name
+            },
+            body: JSON.stringify({ generate_notifications: generateNotifications }),
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateToggleUI(this, generateNotifications);
+            } else {
+                updateToggleUI(this, !generateNotifications);
+                alert('Failed to update notification settings');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            updateToggleUI(this, !generateNotifications);
+            alert('An error occurred. Please try again.');
+        });
+    });
+
+    // Initialize toggle state
+    updateToggleUI(toggle, toggle.checked);
+    });
+
+    function updateToggleUI(toggleElement, isChecked) {
+        toggleElement.checked = isChecked;
+        const dotElement = toggleElement.parentElement.querySelector('.dot');
+        if (isChecked) {
+            dotElement.classList.add('transform', 'translate-x-6', 'bg-green-500');
+            dotElement.classList.remove('bg-white');
+        } else {
+            dotElement.classList.remove('transform', 'translate-x-6', 'bg-green-500');
+            dotElement.classList.add('bg-white');
+        }
+    }
+
+    function deleteActivity(scheduleId, activityId) {
+        if (confirm('Are you sure you want to delete this activity?')) {
+            fetch(`/delete_activity/${scheduleId}/${activityId}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()  // Include CSRF token here
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Failed to delete activity: ${text}`);
+                    });
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('Server response:', data);
+                alert('Activity deleted successfully');
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Failed to delete activity. ${error.message}`);
+            });
+        }
+    }
+
+    function showAddActivityForm(scheduleId) {
+        document.getElementById('modalTitle').textContent = 'Add New Activity';
+        document.getElementById('scheduleId').value = scheduleId;
+        document.getElementById('activityId').value = '';
+        document.getElementById('selectActivity').value = ''; // Reset to first option
+        document.getElementById('startTime').value = '';
+        document.getElementById('duration').value = '';
+        document.getElementById('recurrence').value = 'RRULE:FREQ=DAILY'; // Set default
+        document.getElementById('activitySelectionDiv').classList.remove('hidden');
+        document.getElementById('activityTitleDiv').classList.add('hidden');
+        document.getElementById('activityModal').classList.remove('hidden');
+        document.getElementById('deleteButton').style.display = 'none';
+        document.getElementById('generateNotifications').checked = true; // or false based on your default
+
+    }
+
+    function deleteActivityFromModal() {
+        const scheduleId = document.getElementById('scheduleId').value;
+        const activityId = document.getElementById('activityId').value;
+
+        if (confirm('Are you sure you want to delete this activity?')) {
+            fetch(`/delete_activity/${scheduleId}/${activityId}`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Failed to delete activity: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Server response:', data);
+                alert('Activity deleted successfully');
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Failed to delete activity. ${error.message}`);
+            });
+        }
+    }
+
+    function editActivity(scheduleId, activityId) {
+        fetch(`/edit_activity/${scheduleId}/${activityId}`, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': getCsrfToken()  // Include CSRF token here
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch activity details');
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('modalTitle').textContent = 'Edit Activity';
+            document.getElementById('scheduleId').value = scheduleId;
+            document.getElementById('activityId').value = activityId;
+            document.getElementById('activityTitle').textContent = data.title;
+            document.getElementById('startTime').value = data.start_time;
+            document.getElementById('duration').value = data.duration;
+            document.getElementById('recurrence').value = data.recurrence;
+            document.getElementById('activitySelectionDiv').classList.add('hidden');
+            document.getElementById('activityTitleDiv').classList.remove('hidden');
+            document.getElementById('activityModal').classList.remove('hidden');
+            document.getElementById('generateNotifications').checked = data.generate_notifications;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load activity details. Please try again.');
+        });
+    }
+
+    document.getElementById('activityForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const scheduleId = formData.get('scheduleId');
+        const activityId = formData.get('activityId');
+        
+        let url, method;
+        if (activityId) {
+            url = `/edit_activity/${scheduleId}/${activityId}`;
+            method = 'POST';
+        } else {
+            url = '/add_activity_to_schedule';
+            method = 'POST';
+        }
+
+        fetch(url, {
+            method: method,
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': getCsrfToken()  // Include CSRF token here
+            },
+            redirect: 'follow'
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else if (!response.ok) {
+                throw new Error('Server responded with an error');
+            } else {
+                return response.text();
+            }
+        }).then(data => {
+            if (data) {
+                console.log('Response:', data);
+                window.location.reload();
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('Failed to add/edit activity. Please try again.');
+        });
+    });
+</script>
 {% endblock %}

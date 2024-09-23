@@ -1,10 +1,8 @@
-# seed.py
-
 from app import create_app
 from app.extensions import db
 from app.models import (
     Type, UserType, UserProfile, Category, Activity, ActivityDeck,
-    Schedule, ScheduleActivity, ActivityCompletion, CoachClient, Notification, User
+    Schedule, ScheduleActivity, ActivityInstance, CoachClient, Notification, User
 )
 from datetime import date, time, datetime, timezone
 from zoneinfo import ZoneInfo
@@ -141,6 +139,11 @@ with app.app_context():
         {'category': 'fitness', 'title': 'Lunges', 'duration': 10, 'difficulty': 'Moderate', 'exertion': 'Medium'},
         {'category': 'fitness', 'title': 'Plank', 'duration': 5, 'difficulty': 'Hard', 'exertion': 'High'},
         {'category': 'fitness', 'title': 'Treadmill Intervals', 'duration': 20, 'difficulty': 'Hard', 'exertion': 'High'},
+        {'category': 'mindfulness', 'title': 'Morning Stretch and Meditation', 'duration': 10, 'difficulty': 'Easy', 'exertion': 'Low'},
+        {'category': 'nutrition', 'title': 'Breakfast', 'duration': 20, 'difficulty': 'Easy', 'exertion': 'Low'},
+        {'category': 'nutrition', 'title': 'Water and Snack', 'duration': 10, 'difficulty': 'Easy', 'exertion': 'Low'},
+        {'category': 'nutrition', 'title': 'Lunch', 'duration': 30, 'difficulty': 'Easy', 'exertion': 'Low'},
+        {'category': 'mindfulness', 'title': 'Sleep Meditation', 'duration': 15, 'difficulty': 'Easy', 'exertion': 'Low'},
     ]
 
     activities = []
@@ -174,13 +177,13 @@ with app.app_context():
         db.session.add(schedule)
         db.session.commit()
 
-        # Get the fitness activities
-        push_ups = next(activity for activity in activities if activity.title == 'Push-ups')
-        sit_ups = next(activity for activity in activities if activity.title == 'Sit-ups')
-        squats = next(activity for activity in activities if activity.title == 'Squats')
-        lunges = next(activity for activity in activities if activity.title == 'Lunges')
-        plank = next(activity for activity in activities if activity.title == 'Plank')
-        intervals = next(activity for activity in activities if activity.title == 'Treadmill Intervals')
+        # Get the specific activities by title
+        morning_stretch = next(activity for activity in activities if activity.title == 'Morning Stretch and Meditation')
+        breakfast = next(activity for activity in activities if activity.title == 'Breakfast')
+        water_snack = next(activity for activity in activities if activity.title == 'Water and Snack')
+        lunch = next(activity for activity in activities if activity.title == 'Lunch')
+        yoga = next(activity for activity in activities if activity.title == 'Yoga Session')
+        sleep_meditation = next(activity for activity in activities if activity.title == 'Sleep Meditation')
 
         # Create ScheduleActivities
         pacific_tz = ZoneInfo(client.timezone)
@@ -190,17 +193,18 @@ with app.app_context():
             local_dt = local_dt.replace(tzinfo=pacific_tz)
             return local_dt.astimezone(timezone.utc)
 
-        activities_data = [
-            (time(7, 0), push_ups.id, 10, 'FREQ=DAILY'),
-            (time(7, 15), sit_ups.id, 10, 'FREQ=DAILY'),
-            (time(7, 30), plank.id, 5, 'FREQ=DAILY'),
-            (time(7, 0), intervals.id, 20, 'FREQ=DAILY'),
-            (time(7, 45), squats.id, 10, 'FREQ=WEEKLY;BYDAY=MO,WE,FR'),
-            (time(8, 0), lunges.id, 10, 'FREQ=WEEKLY;BYDAY=MO,WE,FR'),
+        # Add new activities to the schedule
+        new_activities_data = [
+            (time(6, 0), morning_stretch.id, 10, 'FREQ=DAILY'),
+            (time(7, 0), breakfast.id, 20, 'FREQ=DAILY'),
+            (time(10, 0), water_snack.id, 10, 'FREQ=DAILY'),
+            (time(13, 30), lunch.id, 30, 'FREQ=DAILY'),
+            (time(20, 0), yoga.id, 30, 'FREQ=DAILY'),
+            (time(21, 30), sleep_meditation.id, 15, 'FREQ=DAILY'),
         ]
 
         schedule_activities = []
-        for start_time, activity_id, duration, recurrence in activities_data:
+        for start_time, activity_id, duration, recurrence in new_activities_data:
             dtstart = local_to_utc(start_time)
             schedule_activities.append(
                 ScheduleActivity(

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="test_csrf_token">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle Test</title>
+    <!-- Tailwind CSS v3.3.0 via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="flex items-center justify-center h-screen bg-gray-100">
+    <label for="testToggle" class="flex items-center cursor-pointer">
+        <div class="relative">
+            <!-- Hidden Checkbox -->
+            <input type="checkbox" id="testToggle" class="sr-only peer">
+            <!-- Background of the switch -->
+            <div class="w-10 h-4 bg-gray-400 rounded-full shadow-inner peer-checked:bg-green-500 transition-colors"></div>
+            <!-- Toggle dot -->
+            <div class="dot absolute w-6 h-6 bg-white rounded-full shadow -left-1 -top-1 transition-transform peer-checked:translate-x-full"></div>
+        </div>
+        <div class="ml-3 text-gray-700 font-medium">
+            Test Toggle
+        </div>
+    </label>
+</body>
+</html>

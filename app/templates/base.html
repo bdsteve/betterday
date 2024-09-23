@@ -1,9 +1,10 @@
-<!-- app/templates/base.html -->
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     {% block head %}
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BetterDay{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -21,13 +22,13 @@
                 <i class="fas fa-arrow-left"></i>
             </a>
             {% else %}
-            <div class="w-6"></div> <!-- Empty space to keep the title centered -->
+            <div class="w-6"></div> <!-- Empty space to keep the logo centered -->
             {% endif %}
 
-            <!-- App Name -->
-            <h1 class="text-center flex-grow text-gray-800 text-sm font-semibold">
-                BetterDay
-            </h1>
+            <!-- App Logo -->
+            <div class="flex-grow flex justify-center">
+                <img src="{{ url_for('static', filename='Better_Day_Logo.png') }}" alt="BetterDay" class="h-12">
+            </div>
 
             <!-- User Profile Icon -->
             <a href="{{ url_for('main.user_profile') }}" class="text-blue-500 text-2xl">
@@ -50,7 +51,13 @@
 
     <!-- Optional Scripts -->
     {% block scripts %}
-    <!-- Scripts go here -->
+    <script>
+        // Function to get CSRF token from the meta tag
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        }
+    </script>
+    <!-- Additional scripts can be inserted here by child templates -->
     {% endblock %}
 </body>
 </html>

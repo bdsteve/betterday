@@ -17,7 +17,89 @@
         <p class="text-gray-700"><strong>Email:</strong> {{ user.email }}</p>
         <p class="text-gray-700"><strong>Mobile:</strong> {{ user.mobile }}</p>
         <p class="text-gray-700"><strong>Timezone:</strong> {{ user.timezone }}</p>
-        <!-- Add more profile details as needed -->
+        
+        <!-- Toggle for Default Notifications -->
+        <label for="defaultNotifications" class="flex items-center cursor-pointer mt-4">
+            <div class="relative">
+                <!-- Hidden Checkbox with 'peer' class -->
+                <input type="checkbox" id="defaultNotifications" name="default_notifications" class="sr-only peer"
+                       {% if user.default_notifications %}checked{% endif %}>
+                
+                <!-- Background Line -->
+                <div class="w-10 h-4 bg-gray-400 rounded-full shadow-inner peer-checked:bg-green-500 transition-colors"></div>
+                
+                <!-- Toggle Dot -->
+                <div class="dot absolute w-6 h-6 bg-white rounded-full shadow -left-1 -top-1 transition-transform peer-checked:translate-x-full peer-checked:bg-green-500"></div>
+            </div>
+            <div class="ml-3 text-gray-700 font-medium">
+                Default Notifications
+            </div>
+        </label>
+
+        <!-- Logout Button as a Form -->
+        <div class="mt-6">
+            <form action="{{ url_for('main.logout') }}" method="post" onsubmit="return confirmLogout();">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </button>
+            </form>
+        </div>
     </div>
 </main>
+{% endblock %}
+
+<!-- profile.html - scripts block -->
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('defaultNotifications');
+    toggle.addEventListener('change', function() {
+        updateNotificationPreference(this.checked);
+    });
+});
+
+function updateNotificationPreference(isChecked) {
+    console.log('Default Notifications Toggle Clicked. New State:', isChecked);
+    fetch('/update_default_notifications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()  // Ensure correct header name
+        },
+        body: JSON.stringify({ default_notifications: isChecked })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Server Response:', data);
+        if (data.success) {
+            console.log('Notification preference updated successfully.');
+        } else {
+            alert('Failed to update notification preference. Please try again.');
+            // Revert the checkbox state if the update fails
+            document.getElementById('defaultNotifications').checked = !isChecked;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        // Revert the checkbox state on error
+        document.getElementById('defaultNotifications').checked = !isChecked;
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+function confirmLogout() {
+    return confirm('Are you sure you want to logout?');
+}
+</script>
 {% endblock %}
