@@ -48,10 +48,6 @@ Thumbs.db
 logs/
 *.log
 
-# Static and media files
-static/
-media/
-
 # Coverage reports
 .coverage
 coverage.xml
