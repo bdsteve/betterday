@@ -30,9 +30,20 @@ class User(Base, UserMixin):
     user_types: Mapped[List["UserType"]] = relationship(back_populates="user")
     types: Mapped[List["Type"]] = association_proxy("user_types", "type")
     profile: Mapped["UserProfile"] = relationship(back_populates="user", uselist=False)
-    schedules: Mapped[List["Schedule"]] = relationship(back_populates="user")
+    # schedules: Mapped[List["Schedule"]] = relationship(back_populates="user")
     coach_clients: Mapped[List["CoachClient"]] = relationship(back_populates="coach", foreign_keys="[CoachClient.coach_id]")
     client_coaches: Mapped[List["CoachClient"]] = relationship(back_populates="client", foreign_keys="[CoachClient.client_id]")
+
+    owned_schedules = relationship(
+        "Schedule",
+        back_populates="owner",
+        foreign_keys="[Schedule.owner_id]"
+    )
+    assigned_schedules = relationship(
+        "Schedule",
+        back_populates="user",
+        foreign_keys="[Schedule.user_id]"
+    )
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -84,6 +95,9 @@ class Activity(Base):
     __tablename__ = "activities"
     
     id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id = mapped_column(ForeignKey("users.id"), nullable=False)
+    access_level = mapped_column(String(20), default='private', nullable=False)
+    is_system = mapped_column(Boolean, default=False, nullable=False)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
     welcome: Mapped[Optional[str]] = mapped_column(Text)
     title: Mapped[str] = mapped_column(String(200))
@@ -94,9 +108,13 @@ class Activity(Base):
     video: Mapped[Optional[str]] = mapped_column(String(200))
     action: Mapped[Optional[str]] = mapped_column(String(20))
     duration: Mapped[int] = mapped_column(Integer)  # in minutes
-    difficulty: Mapped[str] = mapped_column(String(20))
-    exertion: Mapped[str] = mapped_column(String(20))
+    difficulty: Mapped[str] = mapped_column(String(20)) # TODO: Change to integer
+    exertion: Mapped[str] = mapped_column(String(20)) # TODO: Change to integer
+    link: Mapped[Optional[str]] = mapped_column(String(200))
     
+    owner = relationship("User")
+    shared_with = relationship("ActivityShare", back_populates="activity", cascade="all, delete-orphan")
+
     category: Mapped["Category"] = relationship(back_populates="activities")
     activity_decks: Mapped[List["ActivityDeck"]] = relationship(back_populates="activity")
 
@@ -115,13 +133,28 @@ class Schedule(Base):
     __tablename__ = "schedules"
     
     id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id = mapped_column(ForeignKey("users.id"), nullable=False)
+    access_level = mapped_column(String(20), default='private', nullable=False)
+    is_system = mapped_column(Boolean, default=False, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String(100))
     start_date: Mapped[date] = mapped_column(Date)
     end_date: Mapped[Optional[date]] = mapped_column(Date)
     
-    user: Mapped["User"] = relationship(back_populates="schedules")
+    owner = relationship(
+        "User",
+        back_populates="owned_schedules",
+        foreign_keys=[owner_id]
+    )
+
+    user = relationship(
+        "User",
+        back_populates="assigned_schedules",
+        foreign_keys=[user_id]
+    )
+    
     schedule_activities: Mapped[List["ScheduleActivity"]] = relationship(back_populates="schedule")
+    shared_with = relationship("ScheduleShare", back_populates="schedule", cascade="all, delete-orphan")
 
 class ScheduleActivity(db.Model):
     __tablename__ = "schedule_activities"
@@ -133,7 +166,7 @@ class ScheduleActivity(db.Model):
     dtstart: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)  # Store as UTC
     duration: Mapped[int] = mapped_column(Integer, nullable=False)
     recurrence: Mapped[str] = mapped_column(String, nullable=False)
-    generate_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    generate_notifications: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     schedule: Mapped["Schedule"] = relationship(back_populates="schedule_activities")
     activity: Mapped["Activity"] = relationship()
@@ -144,10 +177,33 @@ class ScheduleActivity(db.Model):
         user = User.query.get(user_id)
         return user.default_notifications if user else True
     
-    def __init__(self, **kwargs):
-        super(ScheduleActivity, self).__init__(**kwargs)
-        if 'generate_notifications' not in kwargs:
-            self.generate_notifications = self.get_default_notifications(self.schedule.user_id)
+    #def __init__(self, **kwargs):
+    #    super(ScheduleActivity, self).__init__(**kwargs)
+    #    if 'generate_notifications' not in kwargs:
+    #        self.generate_notifications = self.get_default_notifications(self.schedule.user_id)
+
+class ActivityShare(Base):
+    __tablename__ = 'activity_shares'
+
+    id = mapped_column(Integer, primary_key=True)
+    activity_id = mapped_column(ForeignKey('activities.id'), nullable=False)
+    user_id = mapped_column(ForeignKey('users.id'), nullable=False)
+    shared_at = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    activity = relationship("Activity", back_populates="shared_with")
+    user = relationship("User")
+
+class ScheduleShare(Base):
+    __tablename__ = 'schedule_shares'
+
+    id = mapped_column(Integer, primary_key=True)
+    schedule_id = mapped_column(ForeignKey('schedules.id'), nullable=False)
+    user_id = mapped_column(ForeignKey('users.id'), nullable=False)
+    shared_at = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    schedule = relationship("Schedule", back_populates="shared_with")
+    user = relationship("User")
+
 
 class ActivityInstance(db.Model):
     __tablename__ = "activity_instances"

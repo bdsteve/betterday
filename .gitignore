@@ -103,3 +103,4 @@ migrations/versions/*
 # Add any project-specific files or directories you want to ignore
 
 combined.txt
+code_*.py 

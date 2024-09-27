@@ -7,7 +7,7 @@ files_to_concatenate = [
     'app/routes.py',
     'app/models.py',
     'app/forms.py',
-#    'app/utils.py',
+    'app/utils.py',
     'app/templates/home.html',
     'app/templates/doactivity.html',
     'app/templates/schedules.html',

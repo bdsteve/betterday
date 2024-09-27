@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta, time, date
 from zoneinfo import ZoneInfo
-from app.models import Schedule, ScheduleActivity, ActivityInstance
+from app.models import Schedule, ScheduleActivity, ActivityInstance, Activity, User, ActivityShare, ScheduleShare
 from app.extensions import db
 from dateutil.rrule import rrulestr
 from dateutil.parser import parse
@@ -37,6 +37,33 @@ def create_activity_instances(schedule_activity, end_date=None):
         )
         db.session.add(activity_instance)
     db.session.commit()
+
+def clone_activity(activity_id, new_owner_id):
+    original = Activity.query.get(activity_id)
+    cloned = Activity(
+        owner_id=new_owner_id,
+        access_level='private',
+        # Copy other fields from the original
+    )
+    db.session.add(cloned)
+    db.session.commit()
+    return cloned
+
+def get_accessible_activities(user_id):
+    user = User.query.get(user_id)
+    public_activities = Activity.query.filter_by(access_level='public')
+    own_activities = Activity.query.filter_by(owner_id=user_id)
+    shared_activities = Activity.query.join(ActivityShare).filter(ActivityShare.user_id == user_id)
+    system_activities = Activity.query.filter_by(is_system=True)
+    return public_activities.union(own_activities, shared_activities, system_activities)
+
+def get_accessible_schedules(user_id):
+    user = User.query.get(user_id)
+    public_schedules = Schedule.query.filter_by(access_level='public')
+    own_schedules = Schedule.query.filter_by(owner_id=user_id)
+    shared_schedules = Schedule.query.join(ScheduleShare).filter(ScheduleShare.user_id == user_id)
+    system_schedules = Schedule.query.filter_by(is_system=True)
+    return public_schedules.union(own_schedules, shared_schedules, system_schedules)
 
 def update_future_instances(schedule_activity, changed_fields):
     current_time = datetime.now(timezone.utc)
